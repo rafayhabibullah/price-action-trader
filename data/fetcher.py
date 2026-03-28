@@ -28,7 +28,7 @@ class CryptoFetcher:
         df = pd.DataFrame(raw, columns=["timestamp", "open", "high", "low", "close", "volume"])
         df["timestamp"] = pd.to_datetime(df["timestamp"], unit="ms", utc=True)
         df.set_index("timestamp", inplace=True)
-        df.index = df.index.tz_localize(None)
+        df.index = df.index.tz_convert(None)
         return df
 
 
@@ -49,7 +49,9 @@ class StockFetcher:
         outputsize: int = 500,
         start_date: str | None = None,
     ) -> pd.DataFrame:
-        td_tf = self.TF_MAP.get(timeframe, timeframe)
+        if timeframe not in self.TF_MAP:
+            raise ValueError(f"Unsupported timeframe '{timeframe}'. Supported: {list(self.TF_MAP)}")
+        td_tf = self.TF_MAP[timeframe]
         kwargs: dict = {"symbol": symbol, "interval": td_tf, "outputsize": outputsize}
         if start_date:
             kwargs["start_date"] = start_date

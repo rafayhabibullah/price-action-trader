@@ -27,6 +27,12 @@ def test_crypto_fetcher_since_param():
     call_kwargs = mock_exchange.fetch_ohlcv.call_args
     assert call_kwargs[1]["since"] == int(since.timestamp() * 1000)
 
+def test_stock_fetcher_invalid_timeframe():
+    mock_client = MagicMock()
+    fetcher = StockFetcher(client=mock_client)
+    with pytest.raises(ValueError, match="Unsupported timeframe"):
+        fetcher.fetch("AAPL", "30m")
+
 # --- StockFetcher ---
 
 def test_stock_fetcher_returns_dataframe():
@@ -39,7 +45,10 @@ def test_stock_fetcher_returns_dataframe():
         "volume":[1000000.0, 1100000.0],
     }, index=pd.date_range("2024-01-01", periods=2, freq="1d"))
     fetcher = StockFetcher(client=mock_client)
-    df = fetcher.fetch("AAPL", "1day", outputsize=2)
+    df = fetcher.fetch("AAPL", "1d", outputsize=2)
     assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == ["open", "high", "low", "close", "volume"]
     assert len(df) == 2
+    # Verify TF_MAP translation: "1d" → "1day"
+    call_kwargs = mock_client.time_series.call_args[1]
+    assert call_kwargs["interval"] == "1day"
