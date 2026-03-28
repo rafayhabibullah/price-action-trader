@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from strategies.base import BaseStrategy
 from trading.symbols import to_alpaca, is_crypto
 from trading import config
+from trading.alpaca_client import AlpacaClient
 
 
 @dataclass
@@ -21,7 +22,7 @@ class Signal:
 
 
 def scan_all(
-    client,
+    client: AlpacaClient,
     strategies: list[BaseStrategy],
     assets_crypto: list[str],
     assets_stocks: list[str],
@@ -45,7 +46,8 @@ def scan_all(
             for strat in strategies:
                 try:
                     sig_df = strat.generate_signals(df)
-                except Exception:
+                except Exception as e:
+                    print(f"[scanner] strategy {strat.__class__.__name__} failed on {asset}/{tf}: {e}")
                     continue
 
                 # Check second-to-last bar (1-bar shifted signal fires on latest open)
