@@ -42,14 +42,14 @@ def test_get_params(cp_strategy):
 
 def test_pin_bar_bullish_detected(cp_strategy):
     # Long lower wick = bullish pin bar (hammer)
-    # Total range = 11, lower wick = 10, body = 0.5 -> pin bar
+    # Candle 2: open=100, high=101, low=89, close=100.5
+    # lower_wick = min(100, 100.5) - 89 = 11, body = 0.5, total = 12
+    # pin_wick_ratio check: lower_wick(11) >= body(0.5) * 2.0 ✓ AND lower_wick(11) >= total(12) * 0.6(7.2) ✓
     df = make_df(
         opens =[100, 100, 100, 100, 100],
         highs =[101, 101, 101, 101, 101],
-        lows  =[99,  99,  89,  99,  99],   # candle 2: long lower wick (89 to 100)
+        lows  =[99,  99,  89,  99,  99],
         closes=[100, 100, 100.5, 100, 100],
     )
     result = cp_strategy.generate_signals(df)
-    # Candle 2 has lower_wick=11.5, body=0.5, upper_wick=0.5, total=12
-    # pin_wick_ratio check: lower_wick (11.5) >= body (0.5) * 2.0 AND lower_wick >= total * 0.6 (7.2)
-    assert result["signal"].isin([-1, 0, 1]).all()
+    assert result.iloc[2]["signal"] == 1, "Expected bullish pin bar signal at index 2"

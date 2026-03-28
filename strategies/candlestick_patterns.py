@@ -18,6 +18,7 @@ class CandlestickPatternStrategy(BaseStrategy):
         return {
             "min_body_ratio": self.min_body_ratio,
             "confirmation_candles": self.confirmation_candles,
+            "pin_wick_ratio": self.pin_wick_ratio,
         }
 
     def _body(self, o, c): return abs(c - o)
