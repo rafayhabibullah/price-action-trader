@@ -18,5 +18,7 @@ REPORTS_DIR: Path = BASE_DIR / os.getenv("REPORTS_DIR", "reports")
 
 TIMEFRAMES: list[str] = ["5m", "15m", "1h", "4h", "1d"]
 
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
-REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+def init_dirs() -> None:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
