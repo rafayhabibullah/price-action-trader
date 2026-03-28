@@ -133,3 +133,29 @@ def test_get_bars_returns_empty_on_repeated_500(client):
     with patch("requests.get", side_effect=[fail, fail]):
         df = client.get_bars("AAPL", "1h", limit=1)
     assert df.empty
+
+
+def test_place_bracket_order_retries_on_500(client):
+    fail = MagicMock()
+    fail.status_code = 500
+    fail.json.return_value = {"message": "internal error"}
+    success = MagicMock()
+    success.status_code = 200
+    success.json.return_value = {"id": "order-123", "status": "pending_new"}
+    with patch("requests.post", side_effect=[fail, success]):
+        result = client.place_bracket_order(
+            symbol="AAPL", side="buy", qty=10, take_profit=120.0, stop_loss=95.0
+        )
+    assert result["id"] == "order-123"
+
+
+def test_close_position_retries_on_500(client):
+    fail = MagicMock()
+    fail.status_code = 500
+    fail.json.return_value = {"message": "internal error"}
+    success = MagicMock()
+    success.status_code = 200
+    success.json.return_value = {"id": "order-456", "status": "pending_new"}
+    with patch("requests.delete", side_effect=[fail, success]):
+        result = client.close_position("AAPL")
+    assert result["id"] == "order-456"

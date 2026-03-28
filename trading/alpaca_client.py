@@ -23,7 +23,10 @@ class AlpacaClient:
             try:
                 r = requests.get(url, headers=self.headers, params=params, timeout=30)
                 if r.status_code < 500:
-                    return r.json()
+                    try:
+                        return r.json()
+                    except (ValueError, Exception):
+                        return {}
                 if attempt == 1:
                     return {}
             except requests.RequestException:
@@ -32,12 +35,36 @@ class AlpacaClient:
         return {}
 
     def _post(self, url: str, payload: dict) -> dict:
-        r = requests.post(url, headers=self.headers, json=payload, timeout=30)
-        return r.json()
+        for attempt in range(2):
+            try:
+                r = requests.post(url, headers=self.headers, json=payload, timeout=30)
+                if r.status_code < 500:
+                    try:
+                        return r.json()
+                    except (ValueError, Exception):
+                        return {}
+                if attempt == 1:
+                    return {}
+            except requests.RequestException:
+                if attempt == 1:
+                    return {}
+        return {}
 
     def _delete(self, url: str) -> dict:
-        r = requests.delete(url, headers=self.headers, timeout=30)
-        return r.json()
+        for attempt in range(2):
+            try:
+                r = requests.delete(url, headers=self.headers, timeout=30)
+                if r.status_code < 500:
+                    try:
+                        return r.json()
+                    except (ValueError, Exception):
+                        return {}
+                if attempt == 1:
+                    return {}
+            except requests.RequestException:
+                if attempt == 1:
+                    return {}
+        return {}
 
     def get_account(self) -> dict:
         return self._get(f"{self.base_url}/account")
