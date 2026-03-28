@@ -1,0 +1,28 @@
+[project]
+name = "price-action-trader"
+version = "0.1.0"
+description = "Institutional price action trading backtester for stocks and crypto"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "ccxt>=4.5.45",
+    "click>=8.3.1",
+    "flask>=3.0",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.3",
+    "pandas>=3.0.1",
+    "pyarrow>=23.0.1",
+    "python-dotenv>=1.2.2",
+    "requests>=2.32",
+    "twelvedata>=1.2.28",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
