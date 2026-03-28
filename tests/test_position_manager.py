@@ -149,3 +149,39 @@ def test_position_sizing_short():
     assert call_kwargs["side"] == "sell"
     # qty = (100000 * 0.02) / (153 - 150) = 2000 / 3 = 666 shares
     assert call_kwargs["qty"] == 666
+
+
+def test_run_cycle_handles_malformed_created_at():
+    """Timeout check should handle malformed created_at gracefully."""
+    positions = [
+        {"symbol": "BTC/USD", "qty": "0.001", "side": "long",
+         "created_at": "not-a-valid-date", "unrealized_pl": "5"}
+    ]
+    client = _make_mock_client(positions=positions)
+    result = run_cycle(
+        client,
+        scan_fn=lambda *a, **kw: [],
+        strategies=[],
+        config_override={},
+    )
+    assert len(result.errors) == 1
+    assert "timeout check error" in result.errors[0]
+    assert result.positions_closed == 0
+
+
+def test_run_cycle_handles_order_placement_exception():
+    """Order placement exception should be logged and cycle continues."""
+    client = _make_mock_client()
+    client.place_bracket_order.side_effect = Exception("insufficient funds")
+    signals = [
+        Signal("BTC/USDT", "1h", "SR", 1, 50000.0, 49000.0, 52000.0)
+    ]
+    result = run_cycle(
+        client,
+        scan_fn=lambda *a, **kw: signals,
+        strategies=[],
+        config_override={},
+    )
+    assert result.orders_placed == 0
+    assert len(result.errors) == 1
+    assert "order error BTC/USDT" in result.errors[0]

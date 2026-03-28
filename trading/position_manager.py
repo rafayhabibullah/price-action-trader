@@ -55,7 +55,8 @@ def run_cycle(
 
     # 2. Check timeouts
     now = datetime.now(timezone.utc)
-    timeout_hours = cfg["MAX_BARS"] * 1.0  # 1h is smallest timeframe, conservative
+    # 100 bars × 1h/bar (most conservative timeframe) = 100 hours timeout
+    timeout_hours = float(cfg["MAX_BARS"])  # MAX_BARS hours at 1h timeframe
     for pos in positions:
         try:
             created_at_str = pos.get("created_at", "")
