@@ -10,13 +10,19 @@ def ob_strategy():
 
 @pytest.fixture
 def ob_df():
-    """Bearish candle followed by strong bullish impulse (order block setup)."""
+    """
+    Bullish OB setup:
+    - i=2: bearish candle (open=105, close=104) — this is the order block
+    - i=3,4,5: bullish impulse (3 consecutive bullish candles)
+    - OB formed_at = index[5]
+    - i=6: price returns into OB zone (103 <= close <= 106) — signal should fire
+    """
     data = {
-        "open":  [100, 101, 100, 98,  97,  100, 103, 106],
-        "high":  [101, 102, 101, 100, 98,  102, 105, 108],
-        "low":   [99,  100, 99,  97,  96,  99,  102, 105],
-        "close": [101, 100, 99,  98,  100, 103, 106, 107],  # i=4 bearish then bullish impulse
-        "volume":[1000]*8,
+        "open":  [100, 100, 105, 104, 107, 109, 108, 107],
+        "high":  [101, 101, 106, 108, 110, 112, 108, 108],
+        "low":   [99,  99,  103, 103, 106, 108, 103.1, 104],
+        "close": [100, 100, 104, 107, 109, 111, 104.5, 106],
+        "volume":[1000.0]*8,
     }
     return pd.DataFrame(data, index=pd.date_range("2024-01-01", periods=8, freq="1h"))
 
@@ -29,6 +35,8 @@ def test_returns_required_columns(ob_strategy, ob_df):
 def test_signal_values_valid(ob_strategy, ob_df):
     result = ob_strategy.generate_signals(ob_df)
     assert result["signal"].isin([-1, 0, 1]).all()
+    # Verify the order block actually fires (not a vacuous pass)
+    assert (result["signal"] == 1).any(), "Expected at least one bullish OB signal"
 
 def test_get_params(ob_strategy):
     params = ob_strategy.get_params()

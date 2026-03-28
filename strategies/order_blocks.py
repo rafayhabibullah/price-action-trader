@@ -39,6 +39,9 @@ class OrderBlockStrategy(BaseStrategy):
             if all(closes[i + k] > opens[i + k] for k in range(1, self.impulse_candles + 1)):
                 ob_high = highs[i]
                 ob_low = lows[i]
+                # Filter out OBs too narrow to be meaningful
+                if ob_low > 0 and (ob_high - ob_low) / ob_low < self.block_size_pct:
+                    continue
                 obs.append({
                     "idx": i,
                     "ob_high": ob_high,
@@ -59,10 +62,14 @@ class OrderBlockStrategy(BaseStrategy):
             if closes[i] <= opens[i]:
                 continue
             if all(closes[i + k] < opens[i + k] for k in range(1, self.impulse_candles + 1)):
+                ob_high = highs[i]
+                ob_low = lows[i]
+                if ob_low > 0 and (ob_high - ob_low) / ob_low < self.block_size_pct:
+                    continue
                 obs.append({
                     "idx": i,
-                    "ob_high": highs[i],
-                    "ob_low": lows[i],
+                    "ob_high": ob_high,
+                    "ob_low": ob_low,
                     "formed_at": df.index[i + self.impulse_candles],
                 })
         return obs
@@ -80,30 +87,41 @@ class OrderBlockStrategy(BaseStrategy):
         lows = df["low"].values
         highs = df["high"].values
 
+        invalidated_bull = set()
+        invalidated_bear = set()
+
         for i in range(self.impulse_candles + 2, len(df)):
             ts = df.index[i]
             close = closes[i]
 
-            for ob in bullish_obs:
-                if ob["formed_at"] >= ts:
+            for j, ob in enumerate(bullish_obs):
+                if ob["formed_at"] >= ts or j in invalidated_bull:
                     continue
                 ob_low = ob["ob_low"]
                 ob_high = ob["ob_high"]
                 invalidation = ob_low * (1 - self.invalidation_pct)
-                # price returns into OB zone from above = long entry
-                if ob_low <= close <= ob_high and lows[i] > invalidation:
+                # Permanently retire if price closes below invalidation
+                if lows[i] < invalidation:
+                    invalidated_bull.add(j)
+                    continue
+                # Price returns into OB zone = long entry
+                if ob_low <= close <= ob_high:
                     if result.at[ts, "signal"] == 0:
                         result.at[ts, "signal"] = 1
                         result.at[ts, "sl"] = invalidation
                         result.at[ts, "tp"] = close + 2 * (close - invalidation)
 
-            for ob in bearish_obs:
-                if ob["formed_at"] >= ts:
+            for j, ob in enumerate(bearish_obs):
+                if ob["formed_at"] >= ts or j in invalidated_bear:
                     continue
                 ob_low = ob["ob_low"]
                 ob_high = ob["ob_high"]
                 invalidation = ob_high * (1 + self.invalidation_pct)
-                if ob_low <= close <= ob_high and highs[i] < invalidation:
+                # Permanently retire if price closes above invalidation
+                if highs[i] > invalidation:
+                    invalidated_bear.add(j)
+                    continue
+                if ob_low <= close <= ob_high:
                     if result.at[ts, "signal"] == 0:
                         result.at[ts, "signal"] = -1
                         result.at[ts, "sl"] = invalidation
