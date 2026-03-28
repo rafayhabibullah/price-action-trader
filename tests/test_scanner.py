@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from unittest.mock import MagicMock
 from datetime import datetime, timezone
-from trading.scanner import Signal, scan_all
+from trading.scanner import Signal, scan_all, _is_candle_closed
 from strategies.support_resistance import SupportResistanceStrategy
 
 
@@ -112,3 +112,33 @@ def test_scan_all_filters_tight_sl():
     for sig in signals:
         sl_dist_pct = abs(sig.entry_price - sig.sl) / sig.entry_price
         assert sl_dist_pct >= 0.001, f"SL too tight: {sl_dist_pct:.5f}"
+
+
+def test_candle_closure_1h_always_closed():
+    """1h candles are always closed when cron runs at :00."""
+    for hour in range(24):
+        dt = datetime(2024, 1, 1, hour, 0, 0, tzinfo=timezone.utc)
+        assert _is_candle_closed("1h", dt) is True
+
+
+def test_candle_closure_4h():
+    """4h candles close at hours 0, 4, 8, 12, 16, 20 UTC."""
+    closed_hours = {0, 4, 8, 12, 16, 20}
+    for hour in range(24):
+        dt = datetime(2024, 1, 1, hour, 0, 0, tzinfo=timezone.utc)
+        expected = hour in closed_hours
+        assert _is_candle_closed("4h", dt) is expected, f"4h at hour {hour}: expected {expected}"
+
+
+def test_candle_closure_1d():
+    """1d candles close at 00:00 UTC."""
+    dt_midnight = datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    dt_noon = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    assert _is_candle_closed("1d", dt_midnight) is True
+    assert _is_candle_closed("1d", dt_noon) is False
+
+
+def test_scan_all_skips_open_4h_candle():
+    """Verify that at hour 3, the 4h candle is not considered closed."""
+    dt = datetime(2024, 1, 1, 3, 0, 0, tzinfo=timezone.utc)
+    assert _is_candle_closed("4h", dt) is False

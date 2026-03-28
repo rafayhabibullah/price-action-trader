@@ -3,11 +3,31 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from strategies.base import BaseStrategy
 from trading.symbols import to_alpaca, is_crypto
 from trading import config
 from trading.alpaca_client import AlpacaClient
+
+
+def _is_candle_closed(timeframe: str, now: datetime | None = None) -> bool:
+    """Return True if the latest candle for this timeframe has closed.
+
+    1h: closed on every full hour (always True when cron runs at :00)
+    4h: closed at hours 0, 4, 8, 12, 16, 20 UTC
+    1d: closed at 00:00 UTC
+    """
+    if now is None:
+        now = datetime.now(timezone.utc)
+    hour = now.hour
+    if timeframe == "1h":
+        return True  # cron runs at :00, 1h candle always just closed
+    elif timeframe == "4h":
+        return hour % 4 == 0
+    elif timeframe == "1d":
+        return hour == 0
+    return True  # unknown timeframes: process anyway
 
 
 @dataclass
@@ -39,6 +59,9 @@ def scan_all(
         alpaca_sym = to_alpaca(asset)
 
         for tf in timeframes:
+            if not _is_candle_closed(tf):
+                continue  # skip open candles
+
             df = client.get_bars(alpaca_sym, tf, limit=config.CANDLE_HISTORY)
             if df is None or len(df) < 50:
                 continue
