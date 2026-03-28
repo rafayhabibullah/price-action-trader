@@ -1,5 +1,4 @@
 import ccxt
-import pandas as pd
 from config.settings import CCXT_EXCHANGE
 
 # Default stock universe — liquid US large-caps + ETFs
@@ -39,8 +38,8 @@ class UniverseManager:
     def get_stock_universe(self) -> list[str]:
         return list(self._stock_symbols)
 
-    def get_full_universe(self) -> dict[str, list[str]]:
+    def get_full_universe(self, min_volume_usd: float = 50_000_000) -> dict[str, list[str]]:
         return {
-            "crypto": self.get_crypto_universe(),
+            "crypto": self.get_crypto_universe(min_volume_usd=min_volume_usd),
             "stocks": self.get_stock_universe(),
         }
