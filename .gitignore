@@ -1,0 +1,8 @@
+.worktrees/
+__pycache__/
+*.py[cod]
+.env
+data/cache/
+reports/
+*.parquet
+.venv/
