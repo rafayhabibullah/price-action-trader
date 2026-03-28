@@ -33,7 +33,7 @@ class MarketStructureStrategy(BaseStrategy):
                 result.append(i)
         return result
 
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _generate_raw_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         result["signal"] = 0
         result["sl"] = np.nan

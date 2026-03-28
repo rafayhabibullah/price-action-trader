@@ -74,7 +74,7 @@ class OrderBlockStrategy(BaseStrategy):
                 })
         return obs
 
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _generate_raw_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         result["signal"] = 0
         result["sl"] = np.nan

@@ -59,7 +59,7 @@ class CandlestickPatternStrategy(BaseStrategy):
     def _is_inside_bar(self, prev_h, prev_l, curr_h, curr_l) -> bool:
         return curr_h <= prev_h and curr_l >= prev_l
 
-    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _generate_raw_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         result = df.copy()
         result["signal"] = 0
         result["sl"] = np.nan

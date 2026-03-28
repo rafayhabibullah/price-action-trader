@@ -6,7 +6,7 @@ from strategies.base import BaseStrategy
 
 
 class AlwaysBuyStrategy(BaseStrategy):
-    def generate_signals(self, df):
+    def _generate_raw_signals(self, df):
         result = df.copy()
         result["signal"] = 0
         result["sl"] = np.nan
