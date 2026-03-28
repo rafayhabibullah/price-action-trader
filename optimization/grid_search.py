@@ -5,18 +5,22 @@ from strategies.base import BaseStrategy
 from backtest.engine import BacktestEngine
 
 
+def score_metrics(metrics: dict) -> float:
+    """Composite score: 0.4*Sharpe + 0.3*ProfitFactor + 0.2*WinRate + 0.1*(1-MaxDrawdown)."""
+    sharpe = max(metrics["sharpe_ratio"], 0)
+    pf = min(metrics["profit_factor"], 10)
+    return (0.4 * sharpe / 3.0 +
+            0.3 * pf / 10.0 +
+            0.2 * metrics["win_rate"] +
+            0.1 * (1 - metrics["max_drawdown"]))
+
+
 def _run_single(args):
     strategy, asset, timeframe, df, starting_capital, risk_per_trade = args
     engine = BacktestEngine(starting_capital=starting_capital, risk_per_trade=risk_per_trade)
     result = engine.run(strategy, df)
     m = result["metrics"]
-    # Composite score: 0.4*Sharpe + 0.3*ProfitFactor + 0.2*WinRate + 0.1*(1-MaxDrawdown)
-    sharpe = max(m["sharpe_ratio"], 0)
-    pf = min(m["profit_factor"], 10)  # cap profit factor to avoid inf skewing score
-    score = (0.4 * sharpe / 3.0 +          # normalize Sharpe (typical range 0-3)
-             0.3 * pf / 10.0 +              # normalize PF (0-10)
-             0.2 * m["win_rate"] +          # already 0-1
-             0.1 * (1 - m["max_drawdown"])) # already 0-1
+    score = score_metrics(m)
     return {
         "strategy": strategy.__class__.__name__,
         "params": strategy.get_params(),

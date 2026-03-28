@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from optimization.grid_search import GridSearch
+from optimization.grid_search import GridSearch, score_metrics
 from strategies.support_resistance import SupportResistanceStrategy
 
 @pytest.fixture
@@ -47,3 +47,27 @@ def test_grid_search_sorted_by_score(sample_data):
     if len(results) > 1:
         scores = results["score"].values
         assert all(scores[i] >= scores[i+1] for i in range(len(scores)-1))
+
+
+def test_score_metrics_basic():
+    metrics = {
+        "sharpe_ratio": 1.5,
+        "profit_factor": 2.0,
+        "win_rate": 0.6,
+        "max_drawdown": 0.1,
+    }
+    score = score_metrics(metrics)
+    expected = (0.4 * 1.5 / 3.0 + 0.3 * 2.0 / 10.0 + 0.2 * 0.6 + 0.1 * 0.9)
+    assert abs(score - expected) < 1e-9
+
+
+def test_score_metrics_caps_profit_factor():
+    metrics = {
+        "sharpe_ratio": 0.0,
+        "profit_factor": float("inf"),
+        "win_rate": 0.5,
+        "max_drawdown": 0.0,
+    }
+    score = score_metrics(metrics)
+    expected = (0.4 * 0.0 + 0.3 * 10.0 / 10.0 + 0.2 * 0.5 + 0.1 * 1.0)
+    assert abs(score - expected) < 1e-9
