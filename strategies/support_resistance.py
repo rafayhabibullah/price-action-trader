@@ -30,6 +30,8 @@ class SupportResistanceStrategy(BaseStrategy):
                 levels.append(float(price))
         # deduplicate nearby levels
         levels = sorted(set(levels))
+        # Keep lowest level in each cluster (sorted ascending; first occurrence wins).
+        # This favours the most conservative support boundary.
         deduped = []
         for lvl in levels:
             if not deduped or lvl > deduped[-1] * (1 + self.zone_width_pct * 2):
