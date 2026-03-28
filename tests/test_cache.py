@@ -49,3 +49,23 @@ def test_append_new_rows(cache, sample_ohlcv):
     cache.append("BTC/USDT", "1h", new_rows)
     result = cache.read("BTC/USDT", "1h")
     assert len(result) == 7
+
+
+def test_append_deduplicates_overlapping_rows(cache, sample_ohlcv):
+    """Overlapping rows: new values should win (keep='last')."""
+    cache.write("BTC/USDT", "1h", sample_ohlcv)
+    # Overlap: update the last 2 rows with different close prices
+    overlap = pd.DataFrame({
+        "timestamp": pd.date_range("2024-01-01 03:00:00", periods=2, freq="1h"),
+        "open": [103.0, 104.0], "high": [105.0, 106.0],
+        "low": [102.0, 103.0], "close": [999.0, 888.0], "volume": [500.0, 600.0],
+    }).set_index("timestamp")
+    cache.append("BTC/USDT", "1h", overlap)
+    result = cache.read("BTC/USDT", "1h")
+    assert len(result) == 5  # no extra rows
+    assert result.loc[pd.Timestamp("2024-01-01 03:00:00"), "close"] == 999.0
+    assert result.loc[pd.Timestamp("2024-01-01 04:00:00"), "close"] == 888.0
+
+
+def test_last_timestamp_missing_returns_none(cache):
+    assert cache.last_timestamp("NONEXISTENT", "1h") is None

@@ -23,12 +23,17 @@ class CacheManager:
         return pd.read_parquet(path)
 
     def last_timestamp(self, asset: str, timeframe: str) -> pd.Timestamp | None:
-        df = self.read(asset, timeframe)
-        if df is None or df.empty:
+        path = self._path(asset, timeframe)
+        if not path.exists():
+            return None
+        df = pd.read_parquet(path, columns=[])  # index only, no column data
+        if len(df.index) == 0:
             return None
         return df.index.max()
 
     def append(self, asset: str, timeframe: str, new_df: pd.DataFrame) -> None:
+        if new_df.empty:
+            return
         existing = self.read(asset, timeframe)
         if existing is None:
             self.write(asset, timeframe, new_df)
