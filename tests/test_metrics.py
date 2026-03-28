@@ -41,7 +41,11 @@ def test_profit_factor(mixed_trades):
 
 def test_max_drawdown(mixed_trades):
     m = compute_metrics(mixed_trades, starting_capital=1000.0)
-    assert m["max_drawdown"] >= 0.0
+    # equity = [1010, 1000, 1015, 1010]; peak = [1010, 1010, 1015, 1015]
+    # drawdown at i=1: (1010-1000)/1010 ≈ 0.0099
+    # drawdown at i=3: (1015-1010)/1015 ≈ 0.0049
+    # max_drawdown ≈ 0.0099
+    assert abs(m["max_drawdown"] - (10.0 / 1010.0)) < 0.001
 
 def test_sharpe_ratio_positive_returns(winning_trades):
     m = compute_metrics(winning_trades, starting_capital=1000.0)

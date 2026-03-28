@@ -22,7 +22,7 @@ def compute_metrics(trades: pd.DataFrame, starting_capital: float) -> dict:
 
     gross_profit = wins["pnl"].sum()
     gross_loss = abs(losses["pnl"].sum())
-    profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
+    profit_factor = float(gross_profit / gross_loss) if gross_loss > 0 else float("inf")
 
     # Max drawdown from equity curve
     equity = trades["equity"].values

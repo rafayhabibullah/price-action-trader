@@ -16,6 +16,10 @@ def simulate_trades(
     sl/tp: stop loss and take profit prices.
 
     Returns DataFrame of completed trades.
+
+    Known limitation: signal fires on bar i's close and entry fills at bar i's open
+    (which has already passed). For strict fill-on-next-bar semantics, callers should
+    shift signals forward by one bar before passing to this function.
     """
     capital = starting_capital
     trades = []
@@ -79,6 +83,7 @@ def simulate_trades(
                     "equity": capital,
                 })
                 in_trade = False
+                continue  # Do not enter a new trade on the same bar as an exit
 
         if not in_trade and signals[i] != 0 and not np.isnan(sls[i]):
             # Enter trade on next bar open — but we enter at current bar open
