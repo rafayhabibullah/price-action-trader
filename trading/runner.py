@@ -14,7 +14,7 @@ import json
 import sys
 from dataclasses import asdict
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 
 from trading import config
 from trading.alpaca_client import AlpacaClient
@@ -46,11 +46,15 @@ def _build_client() -> AlpacaClient:
 
 @app.route("/", methods=["POST"])
 def handle():
-    client = _build_client()
-    result = run_cycle(client, scan_fn=scan_all, strategies=STRATEGIES)
-    output = asdict(result)
-    print(json.dumps(output))  # captured by Cloud Logging
-    return jsonify(output), 200
+    try:
+        client = _build_client()
+        result = run_cycle(client, scan_fn=scan_all, strategies=STRATEGIES)
+        output = asdict(result)
+        print(json.dumps(output))  # captured by Cloud Logging
+        return jsonify(output), 200
+    except Exception as e:
+        print(f"[runner] handler error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/health", methods=["GET"])
