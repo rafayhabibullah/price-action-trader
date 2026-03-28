@@ -88,9 +88,11 @@ def test_run_cycle_skips_signal_for_existing_position():
 
 
 def test_run_cycle_respects_max_concurrent():
+    from datetime import datetime, timezone, timedelta
+    recent_time = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
     positions = [
         {"symbol": f"ASSET{i}/USD", "qty": "1", "side": "long",
-         "created_at": "2024-01-01T00:00:00Z", "unrealized_pl": "0"}
+         "created_at": recent_time, "unrealized_pl": "0"}
         for i in range(15)  # already at max
     ]
     client = _make_mock_client(positions=positions)

@@ -1493,6 +1493,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pyarrow" },
     { name = "python-dotenv" },
+    { name = "requests" },
     { name = "twelvedata" },
 ]
 
@@ -1512,6 +1513,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=3.0.1" },
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
+    { name = "requests", specifier = ">=2.32" },
     { name = "twelvedata", specifier = ">=1.2.28" },
 ]
 

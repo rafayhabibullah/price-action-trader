@@ -93,7 +93,7 @@ def run_cycle(
         if action["action"] == "close_timeout":
             open_assets.add(to_internal(action["symbol"]))
 
-    slots_available = cfg["MAX_CONCURRENT"] - result.open_positions
+    slots_available = cfg["MAX_CONCURRENT"] - (result.open_positions - result.positions_closed)
     if slots_available <= 0:
         return result
 
@@ -120,8 +120,18 @@ def run_cycle(
             price_risk = abs(sig.entry_price - sig.sl)
             raw_qty = risk_amount / price_risk
 
+            if raw_qty <= 0:
+                continue
+
             if is_crypto(sig.asset):
                 qty = round(raw_qty, 8)
+                if qty <= 0:
+                    result.actions.append({
+                        "action": "skip_insufficient_qty",
+                        "symbol": alpaca_sym,
+                        "raw_qty": round(raw_qty, 8),
+                    })
+                    continue
             else:
                 qty = math.floor(raw_qty)
                 if qty < 1:

@@ -159,3 +159,38 @@ def test_close_position_retries_on_500(client):
     with patch("requests.delete", side_effect=[fail, success]):
         result = client.close_position("AAPL")
     assert result["id"] == "order-456"
+
+
+def test_place_bracket_order_stock_uses_day_tif(client):
+    """Stock bracket orders must use time_in_force=day."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"id": "order-123", "status": "pending_new"}
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        client.place_bracket_order(
+            symbol="AAPL",
+            side="buy",
+            qty=10,
+            take_profit=120.0,
+            stop_loss=95.0,
+        )
+    payload = mock_post.call_args.kwargs["json"]
+    assert payload["time_in_force"] == "day"
+    assert payload["order_class"] == "bracket"
+
+
+def test_place_bracket_order_crypto_uses_gtc_tif(client):
+    """Crypto bracket orders must use time_in_force=gtc."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"id": "order-123", "status": "pending_new"}
+    with patch("requests.post", return_value=mock_response) as mock_post:
+        client.place_bracket_order(
+            symbol="BTC/USD",
+            side="buy",
+            qty=0.001,
+            take_profit=60000.0,
+            stop_loss=45000.0,
+        )
+    payload = mock_post.call_args.kwargs["json"]
+    assert payload["time_in_force"] == "gtc"

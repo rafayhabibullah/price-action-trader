@@ -95,12 +95,14 @@ class AlpacaClient:
         take_profit: float,
         stop_loss: float,
     ) -> dict:
+        # Alpaca: stocks require "day" TIF for market orders; crypto supports "gtc"
+        time_in_force = "gtc" if is_crypto(symbol) else "day"
         payload = {
             "symbol": symbol,
             "qty": str(round(qty, 8)),
             "side": side,
             "type": "market",
-            "time_in_force": "gtc",
+            "time_in_force": time_in_force,
             "order_class": "bracket",
             "take_profit": {"limit_price": str(round(take_profit, 4))},
             "stop_loss": {"stop_price": str(round(stop_loss, 4))},
