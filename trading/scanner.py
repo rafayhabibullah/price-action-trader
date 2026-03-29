@@ -63,7 +63,7 @@ def scan_all(
                 continue  # skip open candles
 
             df = client.get_bars(alpaca_sym, tf, limit=config.CANDLE_HISTORY)
-            if df is None or len(df) < 50:
+            if df is None or len(df) < 30:
                 continue
 
             for strat in strategies:
