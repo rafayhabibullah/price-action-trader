@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+from datetime import datetime, timedelta, timezone
 from trading.symbols import is_crypto
 
 
@@ -113,12 +114,15 @@ class AlpacaClient:
         """Fetch OHLCV bars for a symbol. Returns empty DataFrame on error."""
         tf = TF_MAP.get(timeframe, "1Hour")
 
+        # Use start 400 days back so sort=desc returns the most recent `limit` bars
+        # (without start, Alpaca defaults to only the current session's data)
+        start = (datetime.now(timezone.utc) - timedelta(days=400)).strftime("%Y-%m-%dT%H:%M:%SZ")
         if is_crypto(symbol):
-            url = f"{self._data_url_crypto}/crypto/bars"
-            params = {"symbols": symbol, "timeframe": tf, "limit": limit, "sort": "asc"}
+            url = f"{self._data_url_crypto}/crypto/us/bars"
+            params = {"symbols": symbol, "timeframe": tf, "limit": limit, "sort": "desc", "start": start}
         else:
             url = f"{self._data_url_stocks}/stocks/bars"
-            params = {"symbols": symbol, "timeframe": tf, "limit": limit, "sort": "asc"}
+            params = {"symbols": symbol, "timeframe": tf, "limit": limit, "sort": "desc", "start": start}
 
         data = self._get(url, params=params)
         bars_map = data.get("bars", {}) if isinstance(data, dict) else {}
@@ -132,4 +136,5 @@ class AlpacaClient:
         df = df.set_index("t").rename(
             columns={"o": "open", "h": "high", "l": "low", "c": "close", "v": "volume"}
         )
-        return df[["open", "high", "low", "close", "volume"]].astype(float)
+        df = df[["open", "high", "low", "close", "volume"]].astype(float)
+        return df.sort_index()
